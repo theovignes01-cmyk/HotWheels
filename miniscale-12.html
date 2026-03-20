@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiniScale — Collection</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ff:'DM Sans',sans-serif;--ff-d:'DM Serif Display',serif;
+  --black:#18181b;--white:#fff;--bg:#fafaf8;--sur:#f4f3f0;--sur2:#eceae6;
+  --bdr:#e2e0db;--bdr2:#d0cec8;--mut:#9b9890;--txt:#2c2b28;
+  --red:#c9382a;--red-s:#fdf1ef;--grn:#1f7a4a;--grn-s:#eef6f1;--blu:#2a4db5;--blu-s:#eef2fc;
+  --r-s:8px;--r-m:12px;--r-l:18px;--r-x:24px;
+  --sh-s:0 2px 8px rgba(0,0,0,.07);--sh-m:0 6px 24px rgba(0,0,0,.10);--sh-l:0 16px 48px rgba(0,0,0,.13);
+}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--ff);font-size:14px;line-height:1.5}
+input,select,button,textarea{font-family:var(--ff)}
+input[type=number]::-webkit-inner-spin-button{opacity:.4}
+
+.topbar{height:60px;background:var(--white);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:100}
+.logo{font-family:var(--ff-d);font-size:22px;letter-spacing:-.3px}
+.logo span{color:var(--red)}
+.stats-row{display:flex;gap:6px}
+.stat-chip{background:var(--sur);border:1px solid var(--bdr);border-radius:40px;padding:5px 14px;display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.stat-chip strong{font-size:15px;font-weight:600;color:var(--black)}
+.stat-chip small{font-size:9px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--mut)}
+
+.filters-bar{background:var(--white);border-bottom:1px solid var(--bdr);padding:10px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:60px;z-index:90}
+
+.dd-wrap{position:relative}
+.dd-btn{display:flex;align-items:center;gap:8px;background:var(--white);border:1.5px solid var(--bdr2);border-radius:40px;padding:7px 16px;font-size:13px;font-weight:500;color:var(--txt);cursor:pointer;transition:border-color .15s;white-space:nowrap;user-select:none}
+.dd-btn:hover{border-color:var(--black)}
+.dd-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+.dd-btn.active .dd-arrow{color:rgba(255,255,255,.5)}
+.dd-arrow{font-size:11px;color:var(--mut);transition:transform .2s}
+.dd-btn.open .dd-arrow{transform:rotate(180deg)}
+.dd-panel{display:none;position:absolute;top:calc(100% + 8px);left:0;background:var(--white);border:1.5px solid var(--bdr);border-radius:var(--r-x);padding:10px;min-width:280px;max-height:500px;overflow-y:auto;z-index:300;box-shadow:var(--sh-l);animation:fadeUp .15s ease}
+.dd-panel.open{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+.dp-section{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--mut);padding:8px 10px 4px}
+.dp-sep{height:1px;background:var(--bdr);margin:6px 0}
+.dp-row{display:flex;align-items:center;padding:7px 10px;border-radius:var(--r-m);cursor:pointer;transition:background .12s;gap:8px;user-select:none}
+.dp-row:hover{background:var(--sur)}
+.dp-row.sel{background:var(--black);color:#fff}
+.dp-row.sel .dp-count,.dp-row.sel .dp-chv{color:rgba(255,255,255,.5)}
+.dp-icon{width:28px;height:28px;border-radius:var(--r-s);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--sur)}
+.dp-row.sel .dp-icon{background:rgba(255,255,255,.12)}
+.dp-lbl{font-size:13px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dp-count{font-size:11px;font-weight:600;color:var(--mut);background:var(--sur);padding:2px 8px;border-radius:20px;flex-shrink:0}
+.dp-row.sel .dp-count{background:rgba(255,255,255,.15);color:rgba(255,255,255,.7)}
+.dp-chv{font-size:10px;color:var(--mut);transition:transform .2s;flex-shrink:0}
+.dp-chv.open{transform:rotate(90deg)}
+.dp-children{display:none;padding-left:10px}
+.dp-children.open{display:block}
+.dp-row.l1{padding:6px 10px}
+.dp-row.l1 .dp-icon{width:24px;height:24px;font-size:12px}
+.dp-row.l1 .dp-lbl{font-size:12px}
+.dp-row.l2{padding:5px 10px 5px 20px}
+.dp-row.l2 .dp-icon{width:20px;height:20px;font-size:10px}
+.dp-row.l2 .dp-lbl{font-size:12px;color:var(--mut)}
+.dp-row.l2:hover .dp-lbl,.dp-row.l2.sel .dp-lbl{color:inherit}
+.dp-manage{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r-m);cursor:pointer;font-size:12px;font-weight:600;color:var(--mut);transition:background .12s;user-select:none}
+.dp-manage:hover{background:var(--sur);color:var(--txt)}
+
+.f-chip{display:flex;align-items:center;gap:6px;background:var(--sur);border:1.5px solid var(--bdr);border-radius:40px;padding:6px 14px}
+.f-chip label{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--mut);cursor:default;white-space:nowrap}
+.f-chip input[type=number]{border:none;background:transparent;font-size:12px;font-weight:500;color:var(--txt);outline:none;width:68px;padding:0}
+.f-chip select{border:none;background:transparent;font-size:12px;font-weight:500;color:var(--txt);outline:none;padding:0;cursor:pointer}
+.active-pill{display:none;align-items:center;gap:7px;background:var(--black);color:#fff;border-radius:40px;padding:6px 10px 6px 14px;font-size:12px;font-weight:500}
+.active-pill .xb{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;flex-shrink:0;transition:background .15s}
+.active-pill .xb:hover{background:rgba(255,255,255,.35)}
+.search-wrap{position:relative;flex:1;min-width:150px;max-width:280px}
+.search-wrap input{width:100%;border:1.5px solid var(--bdr);border-radius:40px;padding:7px 14px 7px 34px;font-size:13px;font-weight:400;background:var(--sur);color:var(--txt);outline:none;transition:border-color .15s,background .15s}
+.search-wrap input:focus{border-color:var(--black);background:var(--white)}
+.search-wrap input::placeholder{color:var(--mut)}
+.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mut);pointer-events:none}
+.btn-add{margin-left:auto;background:var(--red);color:#fff;border:none;border-radius:40px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+.btn-add:hover{opacity:.88}
+
+.result-bar{padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--mut);font-weight:500;border-bottom:1px solid var(--bdr);background:var(--bg)}
+.view-toggle{display:flex;gap:4px}
+.vt-btn{width:30px;height:30px;border-radius:var(--r-s);border:1.5px solid var(--bdr);background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--mut)}
+.vt-btn:hover{border-color:var(--black);color:var(--black)}
+.vt-btn.active{background:var(--black);border-color:var(--black);color:#fff}
+
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;padding:24px 28px}
+.car-card{background:var(--white);border:1.5px solid var(--bdr);border-radius:var(--r-x);overflow:hidden;cursor:grab;transition:transform .18s,box-shadow .18s,opacity .15s,border-color .15s;position:relative;user-select:none}
+.car-card:active{cursor:grabbing}
+.car-card:hover{transform:translateY(-3px);box-shadow:var(--sh-m)}
+.car-card.dragging{opacity:.3;transform:scale(.96);box-shadow:none !important;border-style:dashed}
+.car-card.drag-over-card{border-color:var(--black);border-style:dashed;transform:translateY(-4px);box-shadow:var(--sh-m)}
+.drag-handle{position:absolute;top:7px;left:7px;width:22px;height:22px;border-radius:6px;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;cursor:grab;z-index:3;opacity:0;transition:opacity .15s;pointer-events:none}
+.car-card:hover .drag-handle{opacity:1}
+.drag-hint{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.38);color:#fff;font-size:9px;font-weight:700;letter-spacing:.5px;padding:3px 7px;border-radius:20px;opacity:0;transition:opacity .15s;pointer-events:none;text-transform:uppercase}
+.car-card:hover .drag-hint{opacity:1}
+.card-img-wrap{width:100%;height:200px;overflow:hidden;background:var(--sur)}
+.card-img-wrap img{width:100%;height:100%;object-fit:contain;display:block;padding:6px}
+.card-ph{width:100%;height:200px;background:var(--sur);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--mut)}
+.card-ph .phi{font-size:32px;line-height:1}
+.card-ph span{font-size:10px;font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+.card-body{padding:12px 14px 8px}
+.card-name{font-size:13px;font-weight:600;line-height:1.3;color:var(--black);margin-bottom:3px}
+.card-sub{font-size:11px;color:var(--mut);margin-bottom:10px}
+.card-row{display:flex;align-items:center;justify-content:space-between}
+.brand-pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700}
+.card-footer{padding:8px 14px 12px;display:flex;align-items:center;gap:8px}
+.color-dot{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--bdr2);flex-shrink:0}
+.color-name{font-size:11px;font-weight:500;color:var(--mut);flex:1}
+.yr-tag{font-size:11px;font-weight:600;color:var(--mut)}
+.price-tag{font-size:11px;font-weight:600;color:var(--txt);margin-left:auto}
+.qty-ball{width:26px;height:26px;border-radius:50%;background:var(--sur);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--txt)}
+.qty-ball.many{background:var(--black);border-color:var(--black);color:#fff}
+
+#view-list{padding:0 28px 24px}
+.tbl-head{display:grid;grid-template-columns:52px 2fr 130px 130px 72px 80px 54px;padding:8px 0;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--mut);border-bottom:1.5px solid var(--bdr);margin-top:20px}
+.tbl-head div,.tbl-row>div{padding:0 6px}
+.tbl-row{display:grid;grid-template-columns:52px 2fr 130px 130px 72px 80px 54px;padding:10px 0;border-bottom:1px solid var(--bdr);align-items:center;cursor:pointer;border-radius:var(--r-m);transition:background .12s}
+.tbl-row:hover{background:var(--sur)}
+.row-thumb{width:44px;height:36px;border-radius:var(--r-s);overflow:hidden;background:var(--sur);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.row-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.row-name{font-size:13px;font-weight:600;color:var(--black)}
+.row-sub{font-size:11px;color:var(--mut);margin-top:1px}
+.color-cell{display:flex;align-items:center;gap:7px}
+
+.summary-bar{position:sticky;bottom:0;background:var(--white);border-top:1px solid var(--bdr);padding:10px 28px;display:flex;gap:24px;font-size:12px;color:var(--mut);font-weight:500}
+.summary-bar strong{color:var(--black);font-weight:600;font-size:13px}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:var(--r-x);width:520px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--sh-l)}
+.modal-header{padding:20px 24px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bdr);position:sticky;top:0;background:var(--white);border-radius:var(--r-x) var(--r-x) 0 0;z-index:2}
+.modal-title{font-family:var(--ff-d);font-size:20px;color:var(--black)}
+.modal-x{width:32px;height:32px;border-radius:50%;background:var(--sur);border:none;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:var(--mut);transition:background .15s}
+.modal-x:hover{background:var(--sur2);color:var(--txt)}
+.modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--bdr);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--white);border-radius:0 0 var(--r-x) var(--r-x);z-index:2}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--mut)}
+.field input,.field select{border:1.5px solid var(--bdr);border-radius:var(--r-m);padding:9px 13px;font-size:13px;font-weight:400;color:var(--txt);background:var(--white);outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus{border-color:var(--black)}
+.field input::placeholder{color:var(--mut)}
+.btn-cancel{background:var(--sur);color:var(--txt);border:none;border-radius:40px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-cancel:hover{background:var(--sur2)}
+.btn-save{background:var(--black);color:#fff;border:none;border-radius:40px;padding:9px 24px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-save:hover{opacity:.85}
+.select-row{display:flex;gap:6px;align-items:center}
+.select-row select{flex:1;min-width:0}
+.btn-new-cat{width:32px;height:41px;flex-shrink:0;border:1.5px solid var(--bdr2);border-radius:var(--r-m);background:var(--sur);color:var(--txt);font-size:17px;font-weight:400;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,background .15s;line-height:1}
+.btn-new-cat:hover{border-color:var(--black);background:var(--sur2)}
+
+.slots-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.photo-slot{aspect-ratio:4/3;border-radius:var(--r-m);overflow:hidden;background:var(--sur);border:2px dashed var(--bdr2);position:relative;cursor:pointer;transition:border-color .15s,background .15s;display:flex;align-items:center;justify-content:center}
+.photo-slot:hover,.photo-slot.drag-over{border-color:var(--black);background:var(--sur2)}
+.photo-slot.filled{border-style:solid;border-color:var(--bdr)}
+.photo-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-slot img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-slot.drag-over *{pointer-events:none}
+.slot-hint{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--mut);pointer-events:none}
+.slot-hint span{font-size:20px}
+.slot-hint small{font-size:10px;font-weight:600}
+.slot-num{position:absolute;top:5px;left:5px;width:17px;height:17px;border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.slot-del{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:11px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;transition:background .15s}
+.slot-del:hover{background:var(--red)}
+
+.detail-main-img{width:100%;height:200px;object-fit:cover;display:block;border-radius:var(--r-x) var(--r-x) 0 0}
+.detail-main-ph{width:100%;height:160px;background:var(--sur);display:flex;align-items:center;justify-content:center;font-size:52px;border-radius:var(--r-x) var(--r-x) 0 0}
+.detail-thumbs{display:flex;gap:6px;padding:8px 16px 0}
+.d-thumb{width:52px;height:40px;border-radius:var(--r-s);object-fit:cover;border:2px solid transparent;cursor:pointer;transition:border-color .15s}
+.d-thumb.on{border-color:var(--black)}
+.detail-actions{display:flex;gap:8px;padding:12px 24px 0;justify-content:flex-end}
+.btn-edit{background:var(--sur);color:var(--txt);border:1.5px solid var(--bdr2);border-radius:40px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:border-color .15s,background .15s}
+.btn-edit:hover{border-color:var(--black);background:var(--sur2)}
+.btn-del{background:transparent;color:var(--red);border:1.5px solid var(--red-s);border-radius:40px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-del:hover{background:var(--red-s)}
+.detail-body{padding:16px 24px 20px}
+.detail-name{font-family:var(--ff-d);font-size:22px;margin-bottom:4px}
+.detail-series{font-size:13px;color:var(--mut);margin-bottom:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.dg-item label{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--mut);display:block;margin-bottom:2px}
+.dg-item span{font-size:14px;font-weight:500;color:var(--black)}
+.detail-notes{margin-top:12px;padding:12px;background:var(--sur);border-radius:var(--r-m);font-size:12px;color:var(--mut)}
+
+/* Category manager */
+.cat-manager{width:600px;max-width:100%}
+.cat-tabs{display:flex;border-bottom:1px solid var(--bdr);padding:0 24px}
+.cat-tab{padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s}
+.cat-tab.on{color:var(--black);border-bottom-color:var(--black)}
+.cat-tab-panel{display:none;padding:16px 24px}
+.cat-tab-panel.on{display:block}
+.cat-list{display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto;margin-bottom:14px}
+.cat-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--r-m);background:var(--sur);border:1px solid var(--bdr)}
+.cat-row-icon{font-size:16px;flex-shrink:0}
+.cat-row-name{flex:1;font-size:13px;font-weight:500}
+.cat-row-sub{font-size:11px;color:var(--mut);white-space:nowrap}
+.cat-row-del{width:24px;height:24px;border-radius:50%;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--mut);transition:background .15s,color .15s;flex-shrink:0}
+.cat-row-del:hover{background:var(--red-s);color:var(--red)}
+.add-form{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--bdr)}
+.add-form .field{flex:1;min-width:100px}
+.add-form .field.icon-f{max-width:76px}
+.btn-add-cat{background:var(--black);color:#fff;border:none;border-radius:var(--r-m);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;height:40px;align-self:flex-end;transition:opacity .15s}
+.btn-add-cat:hover{opacity:.85}
+.empty-list{text-align:center;padding:20px;color:var(--mut);font-size:13px}
+
+.loose-toggle{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:10px 14px;border-radius:var(--r-m);border:1.5px solid var(--bdr);background:var(--sur);transition:border-color .15s}
+.loose-toggle:hover{border-color:var(--bdr2)}
+.loose-toggle input[type=checkbox]{display:none}
+.loose-box{width:20px;height:20px;border-radius:6px;border:2px solid var(--bdr2);background:var(--white);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s}
+.loose-toggle input:checked ~ .loose-box{background:var(--black);border-color:var(--black)}
+.loose-toggle input:checked ~ .loose-box::after{content:'✓';color:#fff;font-size:12px;font-weight:700}
+.loose-lbl{font-size:13px;font-weight:600;color:var(--txt)}
+.loose-sub{font-size:11px;font-weight:400;color:var(--mut)}
+.badge-loose{display:inline-flex;align-items:center;gap:3px;background:#f5f0e8;color:#7a5c1e;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;letter-spacing:.3px}
+
+/* crop */
+.crop-ratio-btn{border:1.5px solid var(--bdr2);background:var(--sur);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;color:var(--mut);transition:all .15s}
+.crop-ratio-btn:hover{border-color:var(--black);color:var(--black)}
+.crop-ratio-btn.on{background:var(--black);border-color:var(--black);color:#fff}
+.slot-crop{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:none;cursor:pointer;opacity:0;transition:opacity .15s;white-space:nowrap;pointer-events:auto}
+.photo-slot:hover .slot-crop{opacity:1}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:10px}
+
+/* ── MOBILE ── */
+@media(max-width:640px){
+  /* topbar */
+  .topbar{padding:0 16px;height:52px}
+  .logo{font-size:19px}
+  .stat-chip{padding:4px 10px}
+  .stat-chip strong{font-size:13px}
+  .stat-chip small{display:none}
+  .stats-row{gap:4px}
+
+  /* filters bar */
+  .filters-bar{padding:8px 12px;top:52px;gap:6px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+  .filters-bar::-webkit-scrollbar{display:none}
+  .f-chip{flex-shrink:0}
+  .search-wrap{min-width:130px;max-width:180px;flex-shrink:0}
+  .btn-add{display:none} /* replaced by FAB */
+  .active-pill{flex-shrink:0}
+
+  /* result bar */
+  .result-bar{padding:6px 12px;font-size:11px}
+
+  /* grid */
+  .cards-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:12px;padding-bottom:80px}
+  /* slot crop btn always visible on touch */
+  .slot-crop{opacity:1;font-size:9px;padding:2px 6px}
+
+  /* list */
+  #view-list{padding:0 12px 80px}
+  .tbl-head{display:none}
+  .tbl-row{grid-template-columns:44px 1fr auto;gap:0;padding:10px 8px;border-radius:var(--r-m);border:1px solid var(--bdr);margin-bottom:6px;background:var(--white)}
+  .tbl-row>div:nth-child(3),.tbl-row>div:nth-child(4),.tbl-row>div:nth-child(5),.tbl-row>div:nth-child(6){display:none}
+  .tbl-row>div:nth-child(7){display:flex;align-items:center;justify-content:center}
+
+  /* summary bar */
+  .summary-bar{padding:8px 12px;gap:12px;font-size:11px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+  .summary-bar span:last-child{display:none}
+
+  /* modals */
+  .modal-overlay{align-items:flex-end;padding:0}
+  .modal{width:100% !important;max-width:100% !important;border-radius:var(--r-x) var(--r-x) 0 0;max-height:92vh;padding-bottom:env(safe-area-inset-bottom)}
+  .modal-header{border-radius:var(--r-x) var(--r-x) 0 0}
+  .form-row{grid-template-columns:1fr}
+  .slots-grid{grid-template-columns:1fr 1fr 1fr}
+
+  /* cat manager */
+  .cat-manager{width:100% !important}
+
+  /* FAB add button */
+  .fab-add{display:flex}
+
+  /* detail image */
+  .detail-main-img{height:220px}
+
+  /* crop modal */
+  #crop-wrap{max-width:100%}
+  #crop-wrap img{max-width:100%!important;width:100%!important}
+}
+
+@media(min-width:641px){
+  .fab-add{display:none}
+}
+
+/* FAB */
+.fab-add{position:fixed;bottom:calc(64px + env(safe-area-inset-bottom));right:16px;width:52px;height:52px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:26px;font-weight:300;cursor:pointer;box-shadow:0 4px 16px rgba(201,56,42,.4);z-index:200;align-items:center;justify-content:center;transition:transform .15s,opacity .15s}
+.fab-add:active{transform:scale(.93)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Mini<span>Scale</span></div>
+  <div class="stats-row">
+    <div class="stat-chip"><strong id="s-total">0</strong><small>Exemplaires</small></div>
+    <div class="stat-chip"><strong id="s-ref">0</strong><small>Références</small></div>
+    <div class="stat-chip"><strong id="s-val">0 €</strong><small>Valeur totale</small></div>
+  </div>
+</div>
+
+<div class="filters-bar">
+  <div class="dd-wrap" id="dd-cat">
+    <div class="dd-btn" id="dd-btn" onclick="toggleDD()">
+      <span id="dd-icon">🗂️</span>
+      <span id="dd-lbl">Catégorie</span>
+      <span class="dd-arrow">▾</span>
+    </div>
+    <div class="dd-panel" id="dd-panel">
+      <div id="tree-root"></div>
+      <div class="dp-sep"></div>
+      <div class="dp-manage" onclick="openCatMgr()">⚙️ &nbsp;Gérer les catégories</div>
+    </div>
+  </div>
+
+  <div class="active-pill" id="active-pill">
+    <span id="pill-lbl">—</span>
+    <div class="xb" onclick="clearCat()">✕</div>
+  </div>
+
+  <div class="f-chip">
+    <label>Année coloris</label>
+    <input type="number" id="yr-color" placeholder="ex: 2025" min="1950" max="2030" oninput="render()">
+  </div>
+  <div class="f-chip">
+    <label>Année carrosserie</label>
+    <input type="number" id="yr-model" placeholder="ex: 1969" min="1950" max="2030" oninput="render()">
+  </div>
+  <div class="f-chip">
+    <label>Trier</label>
+    <select id="sort" onchange="render()">
+      <option value="name">Nom A–Z</option>
+      <option value="year">Année coloris</option>
+      <option value="price">Prix</option>
+      <option value="qty">Quantité</option>
+    </select>
+  </div>
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="search" placeholder="Rechercher…" oninput="render()">
+  </div>
+  <button class="btn-add" onclick="openAdd()">＋ Ajouter</button>
+</div>
+
+<div class="result-bar">
+  <span id="result-info">Chargement…</span>
+  <div class="view-toggle">
+    <button class="vt-btn active" id="vt-grid" onclick="setView('grid')" title="Grille">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    </button>
+    <button class="vt-btn" id="vt-list" onclick="setView('list')" title="Liste">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="14" height="2" rx="1"/><rect x="1" y="7" width="14" height="2" rx="1"/><rect x="1" y="12" width="14" height="2" rx="1"/></svg>
+    </button>
+  </div>
+</div>
+
+<div id="view-grid"><div class="cards-grid" id="cards-grid"></div></div>
+<div id="view-list" style="display:none"><div id="tbl-body"></div></div>
+
+<div class="summary-bar">
+  <span>Valeur filtrée : <strong id="sv">—</strong></span>
+  <span>Exemplaires : <strong id="sq">—</strong></span>
+  <span>Prix moyen : <strong id="sp">—</strong></span>
+</div>
+
+<!-- FAB mobile -->
+<button class="fab-add" onclick="openAdd()">＋</button>
+
+<!-- ADD -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Nouveau modèle</div>
+      <button class="modal-x" onclick="closeAdd()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field full"><label>Nom du modèle</label><input id="f-name" placeholder="ex : Ferrari F40 Competizione"></div>
+      <div class="form-row">
+        <div class="field"><label>Fabricant (marque jouet)</label>
+          <div class="select-row">
+            <select id="f-maker" onchange="onMakerChange()"></select>
+            <button class="btn-new-cat" onclick="quickAddMaker()" title="Nouveau fabricant">＋</button>
+          </div>
+        </div>
+        <div class="field"><label>Marque automobile</label>
+          <div class="select-row">
+            <select id="f-brand"></select>
+            <button class="btn-new-cat" onclick="quickAddBrand()" title="Nouvelle marque auto">＋</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Série</label>
+          <div class="select-row">
+            <select id="f-series"></select>
+            <button class="btn-new-cat" onclick="quickAddSeries()" title="Nouvelle série">＋</button>
+          </div>
+        </div>
+        <div class="field"><label>Échelle</label>
+          <select id="f-scale"><option>1/64</option><option>1/43</option><option>1/32</option><option>1/18</option><option>Autre</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Couleur</label><input id="f-color" placeholder="ex : Noir mat"></div>
+        <div class="field"><label>Code couleur</label>
+          <input id="f-hex" type="color" value="#888888" style="height:41px;border-radius:var(--r-m);border:1.5px solid var(--bdr);padding:4px 8px;cursor:pointer;width:100%">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Année coloris</label><input id="f-yrc" type="number" placeholder="2026" min="1950" max="2030"></div>
+        <div class="field"><label>Année carrosserie orig.</label><input id="f-yrm" type="number" placeholder="2025" min="1950" max="2030"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Quantité</label><input id="f-qty" type="number" value="1" min="1"></div>
+        <div class="field"><label>Prix d'achat (€)</label><input id="f-price" type="number" step="0.01" placeholder="1.50"></div>
+      </div>
+      <div class="field full">
+        <label>Photos (jusqu'à 3) — cliquer ou glisser-déposer</label>
+        <div class="slots-grid" id="add-slots"></div>
+      </div>
+      <div class="field full"><label>Notes</label><input id="f-notes" placeholder="État, provenance, variante…"></div>
+      <label class="loose-toggle">
+        <input type="checkbox" id="f-loose">
+        <span class="loose-box"></span>
+        <span class="loose-lbl">Loose <span class="loose-sub">— sans blister</span></span>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeAdd()">Annuler</button>
+      <button class="btn-save" onclick="saveCar()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL/EDIT -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal" id="detail-content" style="max-width:540px"></div>
+</div>
+
+<!-- CAT MANAGER -->
+<div class="modal-overlay" id="modal-cats">
+  <div class="modal cat-manager">
+    <div class="modal-header">
+      <div class="modal-title">Gérer les catégories</div>
+      <button class="modal-x" onclick="closeCatMgr()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div class="cat-tabs">
+        <div class="cat-tab on"  onclick="catTab(0)">Fabricants</div>
+        <div class="cat-tab"     onclick="catTab(1)">Marques auto</div>
+        <div class="cat-tab"     onclick="catTab(2)">Séries</div>
+      </div>
+      <div class="cat-tab-panel on" id="ctab-0">
+        <div class="cat-list" id="cl-makers"></div>
+        <div class="add-form">
+          <div class="field icon-f"><label>Icône</label><input id="nm-icon" placeholder="🔥" maxlength="4"></div>
+          <div class="field"><label>Nom du fabricant</label><input id="nm-name" placeholder="ex : Hot Wheels"></div>
+          <button class="btn-add-cat" onclick="addMaker()">＋ Ajouter</button>
+        </div>
+      </div>
+      <div class="cat-tab-panel" id="ctab-1">
+        <div class="cat-list" id="cl-brands"></div>
+        <div class="add-form">
+          <div class="field icon-f"><label>Icône</label><input id="nb-icon" placeholder="🏎️" maxlength="4"></div>
+          <div class="field"><label>Marque automobile</label><input id="nb-name" placeholder="ex : Ferrari"></div>
+          <button class="btn-add-cat" onclick="addBrand()">＋ Ajouter</button>
+        </div>
+      </div>
+      <div class="cat-tab-panel" id="ctab-2">
+        <div class="cat-list" id="cl-series"></div>
+        <div class="add-form">
+          <div class="field"><label>Fabricant</label><select id="ns-maker"></select></div>
+          <div class="field"><label>Nom de la série</label><input id="ns-name" placeholder="ex : Car Culture"></div>
+          <button class="btn-add-cat" onclick="addSeries()">＋ Ajouter</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-save" onclick="closeCatMgr()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK CREATE POPUP -->
+<div class="modal-overlay" id="modal-quick">
+  <div class="modal" style="width:360px">
+    <div class="modal-header">
+      <div class="modal-title" id="qc-title">Nouveau fabricant</div>
+      <button class="modal-x" onclick="closeQuick()">✕</button>
+    </div>
+    <div class="modal-body" id="qc-body"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeQuick()">Annuler</button>
+      <button class="btn-save" id="qc-save">Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- CROP MODAL -->
+<div class="modal-overlay" id="modal-crop">
+  <div class="modal" style="width:540px">
+    <div class="modal-header">
+      <div class="modal-title">Rogner l'image</div>
+      <button class="modal-x" onclick="closeCrop()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;gap:10px">
+      <div id="crop-wrap" style="position:relative;overflow:hidden;background:#111;border-radius:var(--r-m);touch-action:none;cursor:crosshair">
+        <img id="crop-img" style="display:block;max-width:100%;user-select:none;pointer-events:none">
+        <div id="crop-box" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.5);box-sizing:border-box;cursor:move"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.5px">Format :</span>
+        <button class="crop-ratio-btn on" onclick="setCropRatio(null,this)">Libre</button>
+        <button class="crop-ratio-btn" onclick="setCropRatio(1,this)">1:1</button>
+        <button class="crop-ratio-btn" onclick="setCropRatio(4/3,this)">4:3</button>
+        <button class="crop-ratio-btn" onclick="setCropRatio(3/4,this)">3:4</button>
+        <button class="crop-ratio-btn" onclick="setCropRatio(16/9,this)">16:9</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeCrop()">Annuler</button>
+      <button class="btn-save" onclick="applyCrop()">✂️ Appliquer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────
+let makers = [
+  {id:'hw',  name:'Hot Wheels', icon:'🔥'},
+  {id:'maj', name:'Majorette',  icon:'🌟'},
+  {id:'mbx', name:'Matchbox',   icon:'📦'},
+];
+let carBrands = [
+  {id:'ferrari',     name:'Ferrari',     icon:'🏎️'},
+  {id:'porsche',     name:'Porsche',     icon:'🏁'},
+  {id:'toyota',      name:'Toyota',      icon:'🇯🇵'},
+  {id:'ford',        name:'Ford',        icon:'🇺🇸'},
+  {id:'chevrolet',   name:'Chevrolet',   icon:'⭐'},
+  {id:'nissan',      name:'Nissan',      icon:'🌸'},
+  {id:'lamborghini', name:'Lamborghini', icon:'🐂'},
+  {id:'vw',          name:'Volkswagen',  icon:'🇩🇪'},
+  {id:'bmw',         name:'BMW',         icon:'⚙️'},
+  {id:'renault',     name:'Renault',     icon:'🇫🇷'},
+  {id:'peugeot',     name:'Peugeot',     icon:'🦁'},
+  {id:'citroen',     name:'Citroën',     icon:'🔷'},
+];
+let seriesList = [
+  {id:'s-cc',   makerId:'hw',  name:'Car Culture'},
+  {id:'s-mm',   makerId:'hw',  name:'Muscle Mania'},
+  {id:'s-jdm',  makerId:'hw',  name:'JDM Legends'},
+  {id:'s-th',   makerId:'hw',  name:'Treasure Hunt'},
+  {id:'s-pr',   makerId:'hw',  name:'Séries Premium'},
+  {id:'s-vf',   makerId:'maj', name:'Vintage France'},
+  {id:'s-ret',  makerId:'maj', name:'Rétros'},
+  {id:'s-spd',  makerId:'maj', name:'Speed Series'},
+  {id:'s-eu',   makerId:'mbx', name:'European Series'},
+];
+let cars = [
+  {id:1, name:'Ferrari F40 Competizione',  makerId:'hw',  brandId:'ferrari',     seriesId:'s-cc',  color:'Noir',     hex:'#1a1a1a', yrc:2026,yrm:2025,scale:'1/64',qty:2,price:2.50,notes:'',img:null,img2:null,img3:null},
+  {id:2, name:'Porsche 911 GT3 RS',        makerId:'hw',  brandId:'porsche',     seriesId:'s-cc',  color:'Orange',   hex:'#e05010', yrc:2025,yrm:2023,scale:'1/64',qty:1,price:1.80,notes:'Boite collector',img:null,img2:null,img3:null},
+  {id:3, name:'Toyota Supra MK4',          makerId:'hw',  brandId:'toyota',      seriesId:'s-jdm', color:'Bleu',     hex:'#2255bb', yrc:2024,yrm:2022,scale:'1/64',qty:3,price:1.20,notes:'',img:null,img2:null,img3:null},
+  {id:4, name:'Renault 5 Turbo',           makerId:'maj', brandId:'renault',     seriesId:'s-vf',  color:'Jaune',    hex:'#e8c020', yrc:2023,yrm:1980,scale:'1/43',qty:1,price:8.00,notes:'Édition limitée',img:null,img2:null,img3:null},
+  {id:5, name:'Ford Mustang Shelby GT500', makerId:'hw',  brandId:'ford',        seriesId:'s-mm',  color:'Blanc',    hex:'#f0f0ee', yrc:2026,yrm:2024,scale:'1/64',qty:1,price:1.80,notes:'',img:null,img2:null,img3:null},
+  {id:6, name:'Lamborghini Huracán',       makerId:'maj', brandId:'lamborghini', seriesId:'s-spd', color:'Vert',     hex:'#22aa44', yrc:2024,yrm:2021,scale:'1/64',qty:2,price:2.00,notes:'',img:null,img2:null,img3:null},
+  {id:7, name:'Volkswagen Golf GTI Mk8',   makerId:'mbx', brandId:'vw',          seriesId:'s-eu',  color:'Rouge',    hex:'#cc2222', yrc:2022,yrm:2021,scale:'1/64',qty:1,price:1.50,notes:'',img:null,img2:null,img3:null},
+  {id:8, name:'Nissan Skyline GT-R R34',   makerId:'hw',  brandId:'nissan',      seriesId:'s-jdm', color:'Argent',   hex:'#c0c0c0', yrc:2025,yrm:2001,scale:'1/64',qty:4,price:2.20,notes:'Treasure Hunt',img:null,img2:null,img3:null},
+  {id:9, name:'Citroën DS 21',             makerId:'maj', brandId:'citroen',     seriesId:'s-ret', color:'Crème',    hex:'#f0e8c0', yrc:2021,yrm:1965,scale:'1/43',qty:1,price:12.00,notes:"Boite d'origine",img:null,img2:null,img3:null},
+  {id:10,name:'Chevrolet Camaro Z28',      makerId:'hw',  brandId:'chevrolet',   seriesId:'s-mm',  color:'Bleu nuit',hex:'#1a2555', yrc:2023,yrm:1969,scale:'1/64',qty:2,price:1.80,notes:'',img:null,img2:null,img3:null},
+  {id:11,name:'BMW M3 E46',                makerId:'hw',  brandId:'bmw',         seriesId:'s-pr',  color:'Gris',     hex:'#888888', yrc:2024,yrm:2003,scale:'1/64',qty:1,price:2.00,notes:'',img:null,img2:null,img3:null},
+  {id:12,name:'Peugeot 205 GTI',           makerId:'maj', brandId:'peugeot',     seriesId:'s-vf',  color:'Blanc',    hex:'#f5f5f5', yrc:2022,yrm:1984,scale:'1/43',qty:2,price:9.00,notes:'',img:null,img2:null,img3:null},
+  {id:13,name:'Ferrari 488 GTB',           makerId:'maj', brandId:'ferrari',     seriesId:'s-spd', color:'Rouge',    hex:'#cc2222', yrc:2023,yrm:2020,scale:'1/43',qty:1,price:5.00,notes:'',img:null,img2:null,img3:null},
+];
+let nextId = 20;
+
+// ── HELPERS ────────────────────────────────────
+const getMaker  = id => makers.find(m=>m.id===id)     || {name:id,icon:'🚗'};
+const getBrand  = id => carBrands.find(b=>b.id===id)  || {name:id,icon:'🚗'};
+const getSeries = id => seriesList.find(s=>s.id===id) || {name:id};
+
+function brandPill(makerId) {
+  const m = getMaker(makerId);
+  const pal = {hw:'background:#fff0ee;color:#c0200a', maj:'background:#eef6f1;color:#1f7a4a', mbx:'background:#eef2fc;color:#2a4db5'};
+  const s = pal[makerId]||'background:var(--sur);color:var(--mut)';
+  return `<span class="brand-pill" style="${s}">${m.icon} ${m.name}</span>`;
+}
+
+function slugify(s) { return s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
+
+// ── FILTER STATE ────────────────────────────────
+let filt = {type:'all'};
+function matchFilt(c) {
+  if (filt.type==='all')         return true;
+  if (filt.type==='maker')       return c.makerId===filt.makerId;
+  if (filt.type==='brand')       return c.brandId===filt.brandId;
+  if (filt.type==='mkbr')        return c.makerId===filt.makerId && c.brandId===filt.brandId;
+  if (filt.type==='series')      return c.seriesId===filt.seriesId;
+  if (filt.type==='scale')       return c.scale===filt.scale;
+  return true;
+}
+
+// ── DROPDOWN TREE ──────────────────────────────
+function renderTree() {
+  let h = '';
+  h += row('all',{type:'all'},'🚗','Toute la collection',cars.length,false,0);
+  h += `<div class="dp-sep"></div><div class="dp-section">Fabricants</div>`;
+  makers.forEach(mk => {
+    const mkN = cars.filter(c=>c.makerId===mk.id).length;
+    h += `<div class="dp-row${filt.type==='maker'&&filt.makerId===mk.id?' sel':''}" onclick="toggle('tm-${mk.id}',event)">
+      <div class="dp-icon">${mk.icon}</div><span class="dp-lbl">${mk.name}</span>
+      <span class="dp-count">${mkN}</span><span class="dp-chv" id="chv-tm-${mk.id}">›</span>
+    </div>
+    <div class="dp-children" id="tm-${mk.id}">`;
+    // "Tout fabricant"
+    h += row('mk-'+mk.id,{type:'maker',makerId:mk.id},mk.icon,'Tout '+mk.name,mkN,true,1);
+    // brands present under this maker
+    [...new Set(cars.filter(c=>c.makerId===mk.id).map(c=>c.brandId))].forEach(bId => {
+      const br = getBrand(bId);
+      const brN = cars.filter(c=>c.makerId===mk.id&&c.brandId===bId).length;
+      h += `<div class="dp-row l1${filt.type==='mkbr'&&filt.makerId===mk.id&&filt.brandId===bId?' sel':''}" onclick="toggle('tb-${mk.id}-${bId}',event)">
+        <div class="dp-icon">${br.icon}</div><span class="dp-lbl">${br.name}</span>
+        <span class="dp-count">${brN}</span><span class="dp-chv" id="chv-tb-${mk.id}-${bId}">›</span>
+      </div>
+      <div class="dp-children" id="tb-${mk.id}-${bId}">`;
+      h += row('mkbr-'+mk.id+'-'+bId,{type:'mkbr',makerId:mk.id,brandId:bId},br.icon,'Toutes '+br.name,brN,true,2);
+      [...new Set(cars.filter(c=>c.makerId===mk.id&&c.brandId===bId).map(c=>c.seriesId))].forEach(sId=>{
+        const sr=getSeries(sId),srN=cars.filter(c=>c.seriesId===sId).length;
+        h+=row('sr-'+sId,{type:'series',seriesId:sId},'●',sr.name,srN,true,2);
+      });
+      h += `</div>`;
+    });
+    h += `</div>`;
+  });
+  h += `<div class="dp-sep"></div><div class="dp-section">Échelles</div>`;
+  ['1/64','1/43','1/32','1/18'].forEach(sc=>{
+    h+=row('sc-'+sc,{type:'scale',scale:sc},'📐',sc,cars.filter(c=>c.scale===sc).length,false,0);
+  });
+  document.getElementById('tree-root').innerHTML = h;
+}
+
+function row(key, filter, icon, label, count, indent, level) {
+  const sel = JSON.stringify(filt)===JSON.stringify(filter);
+  const cls = `dp-row${indent?' l'+level:''}${sel?' sel':''}`;
+  const iSz = level===2 ? 'font-size:10px' : '';
+  return `<div class="${cls}" onclick="selFilt(${JSON.stringify(JSON.stringify(filter))},'${label.replace(/'/g,"\\'")}','${icon}')">
+    <div class="dp-icon" style="${iSz}">${icon}</div>
+    <span class="dp-lbl">${label}</span>
+    <span class="dp-count">${count}</span>
+  </div>`;
+}
+
+function toggle(id, e) {
+  e.stopPropagation();
+  const el=document.getElementById(id), cv=document.getElementById('chv-'+id);
+  if(el) el.classList.toggle('open');
+  if(cv) cv.classList.toggle('open');
+}
+
+function selFilt(filterStr, label, icon) {
+  filt = JSON.parse(filterStr);
+  const isAll = filt.type==='all';
+  document.getElementById('active-pill').style.display = isAll?'none':'flex';
+  document.getElementById('pill-lbl').textContent = label;
+  const btn = document.getElementById('dd-btn');
+  btn.classList.toggle('active',!isAll);
+  document.getElementById('dd-icon').textContent = isAll?'🗂️':icon;
+  document.getElementById('dd-lbl').textContent = isAll?'Catégorie':label;
+  document.getElementById('dd-panel').classList.remove('open');
+  btn.classList.remove('open');
+  ddOpen=false;
+  render();
+}
+
+function clearCat() { selFilt(JSON.stringify({type:'all'}),'Toute la collection','🗂️'); }
+
+let ddOpen=false;
+function toggleDD(){
+  ddOpen=!ddOpen;
+  document.getElementById('dd-panel').classList.toggle('open',ddOpen);
+  document.getElementById('dd-btn').classList.toggle('open',ddOpen);
+  if(ddOpen) renderTree();
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#dd-cat')){
+    document.getElementById('dd-panel').classList.remove('open');
+    document.getElementById('dd-btn').classList.remove('open');
+    ddOpen=false;
+  }
+});
+
+// ── RENDER ─────────────────────────────────────
+function getFiltered(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const yrc=parseInt(document.getElementById('yr-color').value)||null;
+  const yrm=parseInt(document.getElementById('yr-model').value)||null;
+  const srt=document.getElementById('sort').value;
+  let f=cars.filter(c=>{
+    const mc=matchFilt(c);
+    const ms=!q||[c.name,getMaker(c.makerId).name,getBrand(c.brandId).name,getSeries(c.seriesId).name].some(x=>x.toLowerCase().includes(q));
+    return mc&&ms&&(!yrc||c.yrc===yrc)&&(!yrm||c.yrm===yrm);
+  });
+  f.sort((a,b)=>{
+    if(srt==='name')  return a.name.localeCompare(b.name);
+    if(srt==='year')  return b.yrc-a.yrc;
+    if(srt==='price') return b.price-a.price;
+    if(srt==='qty')   return b.qty-a.qty;
+    return 0;
+  });
+  return f;
+}
+
+function render(){
+  const f=getFiltered();
+  const tq=f.reduce((s,c)=>s+c.qty,0);
+  const tv=f.reduce((s,c)=>s+c.price*c.qty,0);
+  const allQty=cars.reduce((s,c)=>s+c.qty,0);
+  const allVal=cars.reduce((s,c)=>s+c.price*c.qty,0);
+  document.getElementById('result-info').textContent=`${f.length} références · ${tq} exemplaires`;
+  document.getElementById('s-total').textContent=allQty.toLocaleString('fr');
+  document.getElementById('s-ref').textContent=cars.length.toLocaleString('fr');
+  document.getElementById('s-val').textContent=allVal.toFixed(0)+' €';
+  document.getElementById('sv').textContent=tv.toFixed(2)+' €';
+  document.getElementById('sq').textContent=tq;
+  document.getElementById('sp').textContent=tq?(tv/tq).toFixed(2)+' €':'—';
+
+  document.getElementById('cards-grid').innerHTML=f.map(c=>`
+    <div class="car-card"
+      draggable="true"
+      data-id="${c.id}"
+      ondragstart="dragStart(event,${c.id})"
+      ondragend="dragEnd(event)"
+      ondragover="cardDragOver(event)"
+      ondragleave="cardDragLeave(event)"
+      ondrop="cardDrop(event,${c.id})"
+      onclick="cardClick(event,${c.id})">
+      <div class="drag-handle">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="#fff">
+          <circle cx="4" cy="2.5" r="1.2"/><circle cx="8" cy="2.5" r="1.2"/>
+          <circle cx="4" cy="6" r="1.2"/><circle cx="8" cy="6" r="1.2"/>
+          <circle cx="4" cy="9.5" r="1.2"/><circle cx="8" cy="9.5" r="1.2"/>
+        </svg>
+      </div>
+      <div class="drag-hint">⠿ déplacer</div>
+      ${c.img?`<div class="card-img-wrap"><img src="${c.img}" alt="${c.name}"></div>`
+             :`<div class="card-ph"><div class="phi">${getMaker(c.makerId).icon}</div><span>Ajouter une photo</span></div>`}
+      <div class="card-body">
+        <div class="card-name">${c.name}</div>
+        <div class="card-sub">${getBrand(c.brandId).name} · ${getSeries(c.seriesId).name} · ${c.scale}</div>
+        <div class="card-row">${brandPill(c.makerId)}${c.loose?'<span class="badge-loose">📦 Loose</span>':''}<span class="qty-ball${c.qty>1?' many':''}">${c.qty}</span></div>
+      </div>
+      <div class="card-footer">
+        <span class="color-dot" style="background:${c.hex}"></span>
+        <span class="color-name">${c.color}</span>
+        <span class="yr-tag">${c.yrc}</span>
+        <span class="price-tag">${c.price.toFixed(2)} €</span>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('tbl-body').innerHTML=
+    `<div class="tbl-head"><div></div><div>Modèle</div><div>Fabricant</div><div>Marque auto</div><div>Coloris</div><div>Carrosserie</div><div style="text-align:center">Qté</div></div>`+
+    f.map(c=>`
+    <div class="tbl-row" onclick="openDetail(${c.id})">
+      <div>${c.img?`<div class="row-thumb"><img src="${c.img}"></div>`:`<div class="row-thumb">${getMaker(c.makerId).icon}</div>`}</div>
+      <div><div class="row-name">${c.name}</div><div class="row-sub">${getSeries(c.seriesId).name} · ${c.scale}</div></div>
+      <div>${brandPill(c.makerId)}</div>
+      <div class="color-cell"><span style="font-size:15px">${getBrand(c.brandId).icon}</span><span style="font-size:12px;font-weight:500">${getBrand(c.brandId).name}</span></div>
+      <div class="color-cell"><span class="color-dot" style="background:${c.hex}"></span><span style="font-size:12px">${c.color} (${c.yrc})</span></div>
+      <div style="font-size:12px;color:var(--mut)">${c.yrm}</div>
+      <div style="display:flex;align-items:center;justify-content:center"><span class="qty-ball${c.qty>1?' many':''}">${c.qty}</span></div>
+    </div>`).join('');
+}
+
+function setView(v){
+  document.getElementById('view-grid').style.display=v==='grid'?'block':'none';
+  document.getElementById('view-list').style.display=v==='list'?'block':'none';
+  document.getElementById('vt-grid').classList.toggle('active',v==='grid');
+  document.getElementById('vt-list').classList.toggle('active',v==='list');
+}
+
+// ── ADD MODAL ──────────────────────────────────
+let addPh=[null,null,null];
+
+function rebuildAddSlots(){
+  document.getElementById('add-slots').innerHTML=buildSlots(addPh,'add',rebuildAddSlots);
+}
+function openAdd(){
+  addPh=[null,null,null];
+  fillSelect('f-maker',makers,m=>`${m.icon} ${m.name}`,m=>m.id);
+  onMakerChange();
+  rebuildAddSlots();
+  document.getElementById('modal-add').classList.add('open');
+}
+function closeAdd(){ document.getElementById('modal-add').classList.remove('open'); }
+
+function fillSelect(elId,arr,labelFn,valFn){
+  document.getElementById(elId).innerHTML=arr.map(x=>`<option value="${valFn(x)}">${labelFn(x)}</option>`).join('');
+}
+
+function onMakerChange(){
+  const makerId=document.getElementById('f-maker').value;
+  fillSelect('f-brand',carBrands,b=>`${b.icon} ${b.name}`,b=>b.id);
+  const ms=seriesList.filter(s=>s.makerId===makerId);
+  fillSelect('f-series',ms,s=>s.name,s=>s.id);
+  if(!ms.length) document.getElementById('f-series').innerHTML=`<option value="">— aucune série —</option>`;
+}
+
+function rebuildAddSlots(){ document.getElementById('add-slots').innerHTML=buildSlots(addPh,'addPh','rebuildAddSlots'); }
+
+function saveCar(){
+  const makerId=document.getElementById('f-maker').value;
+  const brandId=document.getElementById('f-brand').value;
+  const seriesId=document.getElementById('f-series').value||null;
+  const c={
+    id:nextId++,
+    name: document.getElementById('f-name').value||'Sans nom',
+    makerId, brandId, seriesId,
+    color: document.getElementById('f-color').value||'—',
+    hex:   document.getElementById('f-hex').value||'#888888',
+    yrc: parseInt(document.getElementById('f-yrc').value)||2026,
+    yrm: parseInt(document.getElementById('f-yrm').value)||2026,
+    scale: document.getElementById('f-scale').value,
+    qty:  parseInt(document.getElementById('f-qty').value)||1,
+    price: parseFloat(document.getElementById('f-price').value)||0,
+    notes: document.getElementById('f-notes').value,
+    loose: document.getElementById('f-loose').checked,
+    img:addPh[0],img2:addPh[1],img3:addPh[2]
+  };
+  cars.unshift(c);
+  closeAdd(); render();
+}
+
+// ── PHOTO SLOTS ────────────────────────────────
+// Slot context stored by slotKey so inline handlers can reach closures
+const _slotCtx = {};
+
+function buildSlots(photos, key, onUpdate) {
+  _slotCtx[key] = { photos, onUpdate };
+  return [0,1,2].map(i => {
+    const hasImg = !!photos[i];
+    return `
+    <div class="photo-slot${hasImg?' filled':''}" id="slot-${key}-${i}"
+      ondragenter="event.preventDefault();event.stopPropagation();document.getElementById('slot-${key}-${i}').classList.add('drag-over')"
+      ondragover="event.preventDefault();event.stopPropagation()"
+      ondragleave="event.stopPropagation();document.getElementById('slot-${key}-${i}').classList.remove('drag-over')"
+      ondrop="slotDrop(event,'${key}',${i})">
+      <span class="slot-num">${i+1}</span>
+      <input type="file" accept="image/*" style="pointer-events:${hasImg?'none':'auto'}" onchange="slotFile(this,'${key}',${i})">
+      ${hasImg
+        ? `<img src="${photos[i]}" alt="" style="pointer-events:none">
+           <button class="slot-del" onclick="slotDel(event,'${key}',${i})">✕</button>
+           <button class="slot-crop" onclick="openCrop(event,'${key}',${i})">✂️ Rogner</button>`
+        : `<div class="slot-hint" style="pointer-events:none"><span>📷</span><small>Photo ${i+1}</small></div>`
+      }
+    </div>`;
+  }).join('');
+}
+
+function slotFile(input, key, i) {
+  if (!input.files || !input.files[0]) return;
+  const r = new FileReader();
+  r.onload = e => slotSet(key, i, e.target.result);
+  r.readAsDataURL(input.files[0]);
+}
+
+function slotDel(e, key, i) {
+  e.stopPropagation(); e.preventDefault();
+  slotSet(key, i, null);
+}
+
+function slotDrop(e, key, i) {
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById('slot-'+key+'-'+i).classList.remove('drag-over');
+
+  const dt = e.dataTransfer;
+
+  // 1. File from Finder / Downloads
+  const file = dt.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const r = new FileReader();
+    r.onload = ev => slotSet(key, i, ev.target.result);
+    r.readAsDataURL(file);
+    return;
+  }
+
+  // 2. Image element dragged from browser → get src from HTML
+  const html = dt.getData('text/html') || '';
+  const srcMatch = html.match(/src=["']([^"']+)["']/i);
+  if (srcMatch && srcMatch[1]) {
+    const src = srcMatch[1];
+    // absolute URL
+    if (/^https?:\/\//i.test(src)) { slotFetchUrl(src, key, i); return; }
+    // data URL
+    if (/^data:image\//i.test(src)) { slotSet(key, i, src); return; }
+  }
+
+  // 3. Plain URL (text/uri-list or text/plain)
+  const url = (dt.getData('text/uri-list') || dt.getData('text/plain') || '').trim().split('\n')[0];
+  if (/^https?:\/\//i.test(url)) {
+    slotFetchUrl(url, key, i);
+    return;
+  }
+}
+
+function slotFetchUrl(url, key, i) {
+  const slot = document.getElementById('slot-'+key+'-'+i);
+  if (slot) { slot.style.opacity = '0.5'; }
+
+  fetch(url, {mode:'cors'})
+    .then(r => { if (!r.ok) throw new Error('HTTP '+r.status); return r.blob(); })
+    .then(blob => {
+      if (!blob.type.startsWith('image/')) throw new Error('not an image');
+      const r = new FileReader();
+      r.onload = e => { slotSet(key, i, e.target.result); if(slot) slot.style.opacity=''; };
+      r.readAsDataURL(blob);
+    })
+    .catch(() => {
+      // CORS blocked — store the remote URL directly as src (works as long as page is open)
+      slotSet(key, i, url);
+      if (slot) slot.style.opacity = '';
+    });
+}
+
+function slotSet(key, i, value) {
+  const ctx = _slotCtx[key];
+  if (!ctx) return;
+  ctx.photos[i] = value;
+  ctx.onUpdate();
+}
+
+// ── DETAIL / EDIT ──────────────────────────────
+let editId=null, editPh=[null,null,null], mainPh=0;
+
+function openDetail(id){
+  editId=id;
+  const c=cars.find(x=>x.id===id);
+  editPh=[c.img||null,c.img2||null,c.img3||null];
+  mainPh=Math.max(0,editPh.findIndex(p=>p!==null));
+  renderView(); document.getElementById('modal-detail').classList.add('open');
+}
+function closeDetail(){ document.getElementById('modal-detail').classList.remove('open'); editId=null; }
+
+function renderView(){
+  const c=cars.find(x=>x.id===editId);
+  const mi=editPh[mainPh];
+  const thumbs=editPh.filter(Boolean).length>1
+    ?`<div class="detail-thumbs">${editPh.map((p,i)=>p?`<img class="d-thumb${i===mainPh?' on':''}" src="${p}" onclick="mainPh=${i};renderView()">`:''  ).join('')}</div>`:'' ;
+  document.getElementById('detail-content').innerHTML=`
+    ${mi?`<img class="detail-main-img" src="${mi}">`:`<div class="detail-main-ph">${getMaker(c.makerId).icon}</div>`}
+    ${thumbs}
+    <div class="detail-actions">
+      <button class="btn-del" onclick="deleteCar()">🗑 Supprimer</button>
+      <button class="btn-edit" onclick="renderEdit()">✏️ Modifier</button>
+    </div>
+    <div class="detail-body">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px">
+        <div>
+          <div class="detail-name">${c.name}</div>
+          <div class="detail-series">
+            ${brandPill(c.makerId)}
+            <span>${getBrand(c.brandId).icon} ${getBrand(c.brandId).name}</span>
+            <span style="color:var(--bdr2)">·</span>
+            <span>${getSeries(c.seriesId).name}</span>
+            ${c.loose?'<span class="badge-loose">📦 Loose</span>':''}
+          </div>
+        </div>
+        <button class="modal-x" onclick="closeDetail()">✕</button>
+      </div>
+      <div class="detail-grid">
+        <div class="dg-item"><label>Couleur</label>
+          <span style="display:flex;align-items:center;gap:7px">
+            <span class="color-dot" style="background:${c.hex};width:16px;height:16px;flex-shrink:0"></span>${c.color}
+          </span>
+        </div>
+        <div class="dg-item"><label>Échelle</label><span>${c.scale}</span></div>
+        <div class="dg-item"><label>Année coloris</label><span>${c.yrc}</span></div>
+        <div class="dg-item"><label>Carrosserie orig.</label><span>${c.yrm}</span></div>
+        <div class="dg-item"><label>Quantité</label><span>${c.qty} exemplaire${c.qty>1?'s':''}</span></div>
+        <div class="dg-item"><label>Prix d'achat</label><span>${c.price.toFixed(2)} €</span></div>
+      </div>
+      ${c.notes?`<div class="detail-notes">📝 ${c.notes}</div>`:''}
+    </div>`;
+}
+
+function rebuildEditSlots(){
+  document.getElementById('edit-slots').innerHTML=buildSlots(editPh,'edit',rebuildEditSlots);
+}
+
+function renderEdit(){
+  const c=cars.find(x=>x.id===editId);
+  const makerOpts=makers.map(m=>`<option value="${m.id}"${m.id===c.makerId?' selected':''}>${m.icon} ${m.name}</option>`).join('');
+  const brandOpts=carBrands.map(b=>`<option value="${b.id}"${b.id===c.brandId?' selected':''}>${b.icon} ${b.name}</option>`).join('');
+  const serOpts=seriesList.map(s=>`<option value="${s.id}"${s.id===c.seriesId?' selected':''}>${s.name} (${getMaker(s.makerId).name})</option>`).join('');
+  document.getElementById('detail-content').innerHTML=`
+    <div class="modal-header">
+      <div class="modal-title">Modifier le modèle</div>
+      <button class="modal-x" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field full"><label>Photos</label>
+        <div class="slots-grid" id="edit-slots">${buildSlots(editPh,'edit',rebuildEditSlots)}</div>
+      </div>
+      <div class="field full"><label>Nom</label><input id="e-name" value="${c.name}"></div>
+      <div class="form-row">
+        <div class="field"><label>Fabricant</label><select id="e-maker">${makerOpts}</select></div>
+        <div class="field"><label>Marque auto</label><select id="e-brand">${brandOpts}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Série</label><select id="e-series">${serOpts}</select></div>
+        <div class="field"><label>Échelle</label>
+          <select id="e-scale">${['1/64','1/43','1/32','1/18','Autre'].map(s=>`<option${s===c.scale?' selected':''}>${s}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Couleur</label><input id="e-color" value="${c.color}"></div>
+        <div class="field"><label>Code couleur</label>
+          <input id="e-hex" type="color" value="${c.hex}" style="height:41px;border-radius:var(--r-m);border:1.5px solid var(--bdr);padding:4px 8px;cursor:pointer;width:100%">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Année coloris</label><input id="e-yrc" type="number" value="${c.yrc}"></div>
+        <div class="field"><label>Année carrosserie</label><input id="e-yrm" type="number" value="${c.yrm}"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Quantité</label><input id="e-qty" type="number" value="${c.qty}" min="1"></div>
+        <div class="field"><label>Prix (€)</label><input id="e-price" type="number" step="0.01" value="${c.price}"></div>
+      </div>
+      <div class="field full"><label>Notes</label><input id="e-notes" value="${c.notes||''}"></div>
+      <label class="loose-toggle">
+        <input type="checkbox" id="e-loose"${c.loose?' checked':''}>
+        <span class="loose-box"></span>
+        <span class="loose-lbl">Loose <span class="loose-sub">— sans blister</span></span>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="renderView()">← Retour</button>
+      <button class="btn-save" onclick="saveEdit()">Enregistrer</button>
+    </div>`;
+}
+
+function saveEdit(){
+  const c=cars.find(x=>x.id===editId);
+  c.name   =document.getElementById('e-name').value||c.name;
+  c.makerId=document.getElementById('e-maker').value;
+  c.brandId=document.getElementById('e-brand').value;
+  c.seriesId=document.getElementById('e-series').value;
+  c.color  =document.getElementById('e-color').value;
+  c.hex    =document.getElementById('e-hex').value;
+  c.scale  =document.getElementById('e-scale').value;
+  c.yrc=parseInt(document.getElementById('e-yrc').value)||c.yrc;
+  c.yrm=parseInt(document.getElementById('e-yrm').value)||c.yrm;
+  c.qty=parseInt(document.getElementById('e-qty').value)||1;
+  c.price=parseFloat(document.getElementById('e-price').value)||0;
+  c.notes=document.getElementById('e-notes').value;
+  c.loose=document.getElementById('e-loose').checked;
+  c.img=editPh[0];c.img2=editPh[1];c.img3=editPh[2];
+  mainPh=Math.max(0,editPh.findIndex(p=>p!==null));
+  render(); renderView();
+}
+
+function deleteCar(){
+  const c=cars.find(x=>x.id===editId);
+  if(!confirm(`Supprimer "${c.name}" ?`))return;
+  cars=cars.filter(x=>x.id!==editId);
+  closeDetail(); render();
+}
+
+document.getElementById('modal-detail').addEventListener('click',e=>{ if(e.target===document.getElementById('modal-detail'))closeDetail(); });
+document.getElementById('modal-add').addEventListener('click',e=>{ if(e.target===document.getElementById('modal-add'))closeAdd(); });
+
+// ── CATEGORY MANAGER ───────────────────────────
+function openCatMgr(){
+  ddOpen=false;
+  document.getElementById('dd-panel').classList.remove('open');
+  document.getElementById('dd-btn').classList.remove('open');
+  renderCatLists();
+  document.getElementById('modal-cats').classList.add('open');
+}
+function closeCatMgr(){ document.getElementById('modal-cats').classList.remove('open'); render(); }
+
+function catTab(i){
+  document.querySelectorAll('.cat-tab').forEach((t,j)=>t.classList.toggle('on',j===i));
+  document.querySelectorAll('.cat-tab-panel').forEach((p,j)=>p.classList.toggle('on',j===i));
+  renderCatLists();
+}
+
+function renderCatLists(){
+  document.getElementById('cl-makers').innerHTML=makers.length
+    ?makers.map(m=>`<div class="cat-row">
+        <span class="cat-row-icon">${m.icon}</span>
+        <span class="cat-row-name">${m.name}</span>
+        <span class="cat-row-sub">${cars.filter(c=>c.makerId===m.id).length} modèles</span>
+        <button class="cat-row-del" onclick="delMaker('${m.id}')">🗑</button>
+      </div>`).join('')
+    :`<div class="empty-list">Aucun fabricant</div>`;
+
+  document.getElementById('cl-brands').innerHTML=carBrands.length
+    ?carBrands.map(b=>`<div class="cat-row">
+        <span class="cat-row-icon">${b.icon}</span>
+        <span class="cat-row-name">${b.name}</span>
+        <span class="cat-row-sub">${cars.filter(c=>c.brandId===b.id).length} modèles</span>
+        <button class="cat-row-del" onclick="delBrand('${b.id}')">🗑</button>
+      </div>`).join('')
+    :`<div class="empty-list">Aucune marque automobile</div>`;
+
+  document.getElementById('cl-series').innerHTML=seriesList.length
+    ?seriesList.map(s=>{
+        const mk=getMaker(s.makerId);
+        return `<div class="cat-row">
+          <span class="cat-row-icon">${mk.icon}</span>
+          <span class="cat-row-name">${s.name}</span>
+          <span class="cat-row-sub">${mk.name} · ${cars.filter(c=>c.seriesId===s.id).length} modèles</span>
+          <button class="cat-row-del" onclick="delSeries('${s.id}')">🗑</button>
+        </div>`;}).join('')
+    :`<div class="empty-list">Aucune série</div>`;
+
+  document.getElementById('ns-maker').innerHTML=makers.map(m=>`<option value="${m.id}">${m.icon} ${m.name}</option>`).join('');
+}
+
+function addMaker(){
+  const icon=document.getElementById('nm-icon').value.trim()||'🚗';
+  const name=document.getElementById('nm-name').value.trim();
+  if(!name)return;
+  const id=slugify(name);
+  if(makers.find(m=>m.id===id)){alert('Ce fabricant existe déjà.');return;}
+  makers.push({id,name,icon});
+  document.getElementById('nm-name').value='';
+  document.getElementById('nm-icon').value='';
+  renderCatLists();
+}
+function addBrand(){
+  const icon=document.getElementById('nb-icon').value.trim()||'🚗';
+  const name=document.getElementById('nb-name').value.trim();
+  if(!name)return;
+  const id=slugify(name);
+  if(carBrands.find(b=>b.id===id)){alert('Cette marque existe déjà.');return;}
+  carBrands.push({id,name,icon});
+  document.getElementById('nb-name').value='';
+  document.getElementById('nb-icon').value='';
+  renderCatLists();
+}
+function addSeries(){
+  const makerId=document.getElementById('ns-maker').value;
+  const name=document.getElementById('ns-name').value.trim();
+  if(!name)return;
+  const id='s-'+slugify(name);
+  if(seriesList.find(s=>s.id===id)){alert('Cette série existe déjà.');return;}
+  seriesList.push({id,makerId,name});
+  document.getElementById('ns-name').value='';
+  renderCatLists();
+}
+function delMaker(id){
+  const n=cars.filter(c=>c.makerId===id).length;
+  if(n&&!confirm(`Ce fabricant contient ${n} modèle(s). Supprimer quand même ?`))return;
+  makers=makers.filter(m=>m.id!==id); renderCatLists();
+}
+function delBrand(id){
+  const n=cars.filter(c=>c.brandId===id).length;
+  if(n&&!confirm(`Cette marque contient ${n} modèle(s). Supprimer quand même ?`))return;
+  carBrands=carBrands.filter(b=>b.id!==id); renderCatLists();
+}
+function delSeries(id){
+  const n=cars.filter(c=>c.seriesId===id).length;
+  if(n&&!confirm(`Cette série contient ${n} modèle(s). Supprimer quand même ?`))return;
+  seriesList=seriesList.filter(s=>s.id!==id); renderCatLists();
+}
+document.getElementById('modal-cats').addEventListener('click',e=>{ if(e.target===document.getElementById('modal-cats'))closeCatMgr(); });
+
+// ── CARD DRAG & DROP REORDER ───────────────────
+let dragSrcId = null;
+let dragEndedAt = 0; // timestamp of last dragend — used to swallow the follow-up click
+
+function dragStart(e, id) {
+  dragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', String(id));
+  setTimeout(() => {
+    const el = document.querySelector(`.car-card[data-id="${id}"]`);
+    if (el) el.classList.add('dragging');
+  }, 0);
+}
+
+function dragEnd(e) {
+  dragEndedAt = Date.now();
+  document.querySelectorAll('.car-card').forEach(c =>
+    c.classList.remove('dragging', 'drag-over-card')
+  );
+  dragSrcId = null;
+}
+
+function cardDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const id = parseInt(e.currentTarget.dataset.id);
+  if (id !== dragSrcId) e.currentTarget.classList.add('drag-over-card');
+}
+
+function cardDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over-card');
+}
+
+function cardDrop(e, targetId) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.remove('drag-over-card');
+  if (!dragSrcId || dragSrcId === targetId) return;
+  const fromIdx = cars.findIndex(c => c.id === dragSrcId);
+  const toIdx   = cars.findIndex(c => c.id === targetId);
+  if (fromIdx === -1 || toIdx === -1) return;
+  const [moved] = cars.splice(fromIdx, 1);
+  cars.splice(toIdx, 0, moved);
+  render();
+}
+
+// The browser fires a click after every dragend on the source element.
+// We swallow it if it arrives within 200 ms of the drag finishing.
+function cardClick(e, id) {
+  if (Date.now() - dragEndedAt < 200) return;
+  openDetail(id);
+}
+
+// ── QUICK CREATE (inline from add/edit form) ───
+function closeQuick(){ document.getElementById('modal-quick').classList.remove('open'); }
+
+function quickAddMaker(){
+  document.getElementById('qc-title').textContent = 'Nouveau fabricant';
+  document.getElementById('qc-body').innerHTML = `
+    <div class="form-row">
+      <div class="field icon-f" style="max-width:80px"><label>Icône</label><input id="qc-icon" placeholder="🔥" maxlength="4" style="text-align:center;font-size:18px"></div>
+      <div class="field"><label>Nom du fabricant</label><input id="qc-name" placeholder="ex : Siku" autofocus></div>
+    </div>`;
+  document.getElementById('qc-save').onclick = () => {
+    const icon = document.getElementById('qc-icon').value.trim() || '🚗';
+    const name = document.getElementById('qc-name').value.trim();
+    if (!name) return;
+    const id = slugify(name);
+    if (makers.find(m=>m.id===id)){ alert('Ce fabricant existe déjà.'); return; }
+    makers.push({id, name, icon});
+    fillSelect('f-maker', makers, m=>`${m.icon} ${m.name}`, m=>m.id);
+    document.getElementById('f-maker').value = id;
+    onMakerChange();
+    closeQuick();
+  };
+  document.getElementById('modal-quick').classList.add('open');
+  setTimeout(()=>document.getElementById('qc-name').focus(), 50);
+}
+
+function quickAddBrand(){
+  document.getElementById('qc-title').textContent = 'Nouvelle marque automobile';
+  document.getElementById('qc-body').innerHTML = `
+    <div class="form-row">
+      <div class="field icon-f" style="max-width:80px"><label>Icône</label><input id="qc-icon" placeholder="🏎️" maxlength="4" style="text-align:center;font-size:18px"></div>
+      <div class="field"><label>Marque automobile</label><input id="qc-name" placeholder="ex : Alpine" autofocus></div>
+    </div>`;
+  document.getElementById('qc-save').onclick = () => {
+    const icon = document.getElementById('qc-icon').value.trim() || '🚗';
+    const name = document.getElementById('qc-name').value.trim();
+    if (!name) return;
+    const id = slugify(name);
+    if (carBrands.find(b=>b.id===id)){ alert('Cette marque existe déjà.'); return; }
+    carBrands.push({id, name, icon});
+    fillSelect('f-brand', carBrands, b=>`${b.icon} ${b.name}`, b=>b.id);
+    document.getElementById('f-brand').value = id;
+    closeQuick();
+  };
+  document.getElementById('modal-quick').classList.add('open');
+  setTimeout(()=>document.getElementById('qc-name').focus(), 50);
+}
+
+function quickAddSeries(){
+  const makerId = document.getElementById('f-maker').value;
+  const mk = getMaker(makerId);
+  document.getElementById('qc-title').textContent = 'Nouvelle série';
+  document.getElementById('qc-body').innerHTML = `
+    <div class="field full"><label>Fabricant parent</label>
+      <select id="qc-maker">${makers.map(m=>`<option value="${m.id}"${m.id===makerId?' selected':''}>${m.icon} ${m.name}</option>`).join('')}</select>
+    </div>
+    <div class="field full"><label>Nom de la série</label><input id="qc-name" placeholder="ex : Car Culture" autofocus></div>`;
+  document.getElementById('qc-save').onclick = () => {
+    const mId = document.getElementById('qc-maker').value;
+    const name = document.getElementById('qc-name').value.trim();
+    if (!name) return;
+    const id = 's-' + slugify(name);
+    if (seriesList.find(s=>s.id===id)){ alert('Cette série existe déjà.'); return; }
+    seriesList.push({id, makerId: mId, name});
+    onMakerChange(); // refresh series select
+    document.getElementById('f-series').value = id;
+    closeQuick();
+  };
+  document.getElementById('modal-quick').classList.add('open');
+  setTimeout(()=>document.getElementById('qc-name').focus(), 50);
+}
+
+document.getElementById('modal-quick').addEventListener('click', e=>{
+  if(e.target===document.getElementById('modal-quick')) closeQuick();
+});
+
+// ── CROP ───────────────────────────────────────
+let cropKey=null, cropIdx=null, cropRatio=null;
+let cropState={x:0,y:0,w:0,h:0};
+let cropDrag=null; // {startX,startY,ox,oy,ow,oh,mode}
+
+function openCrop(e, key, i) {
+  e.stopPropagation(); e.preventDefault();
+  const ctx = _slotCtx[key];
+  if (!ctx || !ctx.photos[i]) return;
+  cropKey=key; cropIdx=i; cropRatio=null;
+
+  const img = document.getElementById('crop-img');
+  img.src = ctx.photos[i];
+  img.onload = () => {
+    // Size the wrap to fit within 500px
+    const wrap = document.getElementById('crop-wrap');
+    const maxW = 500;
+    const scale = img.naturalWidth > maxW ? maxW/img.naturalWidth : 1;
+    const dW = Math.round(img.naturalWidth * scale);
+    const dH = Math.round(img.naturalHeight * scale);
+    wrap.style.width = dW+'px';
+    wrap.style.height = dH+'px';
+    img.style.width = dW+'px';
+    img.style.height = dH+'px';
+    // default: full image selected
+    cropState = {x:0, y:0, w:dW, h:dH};
+    updateCropBox();
+  };
+
+  document.getElementById('modal-crop').classList.add('open');
+  // Reset ratio buttons
+  document.querySelectorAll('.crop-ratio-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelector('.crop-ratio-btn').classList.add('on');
+}
+
+function closeCrop() {
+  document.getElementById('modal-crop').classList.remove('open');
+  cropKey=null; cropIdx=null;
+}
+
+function setCropRatio(r, btn) {
+  cropRatio = r;
+  document.querySelectorAll('.crop-ratio-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  if (r !== null) {
+    const wrap = document.getElementById('crop-wrap');
+    const wW = wrap.offsetWidth, wH = wrap.offsetHeight;
+    let cW = cropState.w, cH = cW/r;
+    if (cH > wH) { cH = wH; cW = cH*r; }
+    cropState.w = Math.round(cW);
+    cropState.h = Math.round(cH);
+    cropState.x = Math.round((wW-cW)/2);
+    cropState.y = Math.round((wH-cH)/2);
+    updateCropBox();
+  }
+}
+
+function updateCropBox() {
+  const b = document.getElementById('crop-box');
+  const {x,y,w,h} = cropState;
+  b.style.left=x+'px'; b.style.top=y+'px';
+  b.style.width=w+'px'; b.style.height=h+'px';
+}
+
+// Drag interaction on crop-wrap
+const cropWrap = document.getElementById('crop-wrap');
+
+cropWrap.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const box = document.getElementById('crop-box');
+  const br = box.getBoundingClientRect();
+  const wr = cropWrap.getBoundingClientRect();
+  const mx = e.clientX - wr.left, my = e.clientY - wr.top;
+  // edge threshold px
+  const T=10;
+  const onL=Math.abs(mx-cropState.x)<T, onR=Math.abs(mx-(cropState.x+cropState.w))<T;
+  const onT=Math.abs(my-cropState.y)<T, onB=Math.abs(my-(cropState.y+cropState.h))<T;
+  const inside = mx>=cropState.x && mx<=cropState.x+cropState.w && my>=cropState.y && my<=cropState.y+cropState.h;
+
+  let mode='new';
+  if (onL&&onT) mode='nw'; else if (onR&&onT) mode='ne';
+  else if (onL&&onB) mode='sw'; else if (onR&&onB) mode='se';
+  else if (onL) mode='w'; else if (onR) mode='e';
+  else if (onT) mode='n'; else if (onB) mode='s';
+  else if (inside) mode='move';
+
+  cropDrag={startX:mx,startY:my,ox:cropState.x,oy:cropState.y,ow:cropState.w,oh:cropState.h,mode};
+  cropWrap.style.cursor = mode==='move'?'grabbing':mode==='new'?'crosshair':'nwse-resize';
+});
+
+document.addEventListener('mousemove', e => {
+  if (!cropDrag) return;
+  const wr = document.getElementById('crop-wrap').getBoundingClientRect();
+  const mx = Math.max(0,Math.min(e.clientX-wr.left, wr.width));
+  const my = Math.max(0,Math.min(e.clientY-wr.top, wr.height));
+  const dx=mx-cropDrag.startX, dy=my-cropDrag.startY;
+  const {ox,oy,ow,oh,mode}=cropDrag;
+  let {x,y,w,h}=cropState;
+  const wW=wr.width, wH=wr.height;
+
+  if (mode==='new') {
+    x=Math.min(cropDrag.startX,mx); y=Math.min(cropDrag.startY,my);
+    w=Math.abs(mx-cropDrag.startX); h=Math.abs(my-cropDrag.startY);
+    if (cropRatio) { h=w/cropRatio; if(y+h>wH){h=wH-y;w=h*cropRatio;} }
+  } else if (mode==='move') {
+    x=Math.max(0,Math.min(ox+dx, wW-ow));
+    y=Math.max(0,Math.min(oy+dy, wH-oh));
+    w=ow; h=oh;
+  } else {
+    // resize handles
+    if (mode.includes('e')) { w=Math.max(20,Math.min(ow+dx,wW-ox)); }
+    if (mode.includes('s')) { h=Math.max(20,Math.min(oh+dy,wH-oy)); }
+    if (mode.includes('w')) { w=Math.max(20,ow-dx); x=Math.max(0,Math.min(ox+dx,ox+ow-20)); }
+    if (mode.includes('n')) { h=Math.max(20,oh-dy); y=Math.max(0,Math.min(oy+dy,oy+oh-20)); }
+    if (cropRatio) { h=w/cropRatio; }
+  }
+  cropState={x:Math.round(x),y:Math.round(y),w:Math.round(Math.max(10,w)),h:Math.round(Math.max(10,h))};
+  updateCropBox();
+});
+
+document.addEventListener('mouseup', () => {
+  if (cropDrag) { cropDrag=null; if(cropWrap) cropWrap.style.cursor='crosshair'; }
+});
+
+function applyCrop() {
+  const img = document.getElementById('crop-img');
+  const wrap = document.getElementById('crop-wrap');
+  const scaleX = img.naturalWidth / wrap.offsetWidth;
+  const scaleY = img.naturalHeight / wrap.offsetHeight;
+  const {x,y,w,h} = cropState;
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = Math.round(w * scaleX);
+  canvas.height = Math.round(h * scaleY);
+  const ctx2 = canvas.getContext('2d');
+  ctx2.drawImage(img,
+    Math.round(x*scaleX), Math.round(y*scaleY),
+    canvas.width, canvas.height,
+    0, 0, canvas.width, canvas.height
+  );
+  slotSet(cropKey, cropIdx, canvas.toDataURL('image/jpeg', 0.92));
+  closeCrop();
+}
+
+document.getElementById('modal-crop').addEventListener('click', e=>{
+  if(e.target===document.getElementById('modal-crop')) closeCrop();
+});
+
+// INIT
+// Block browser from navigating away when dropping files/images anywhere on the page
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => e.preventDefault());
+render();
+</script>
+</body>
+</html>
